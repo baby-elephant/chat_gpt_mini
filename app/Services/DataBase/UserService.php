@@ -24,7 +24,7 @@ class UserService
     {
         $user = $this->userRepository->findByEmail($credentials['email']);
         if ($user && Hash::check($credentials['password'], $user->password)) {
-            auth()->login($user, true);
+            auth()->login($user);
             return true;
         }
         return false;
