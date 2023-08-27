@@ -18,6 +18,11 @@ class ChatHistoriesService
         $this->chatHistoriesRepository = $chatHistoriesRepository;
     }
 
+
+    public function getTargetColumnsById(int $id, array $target_columns): array {
+        return $this->chatHistoriesRepository->getRecodeByConditions($target_columns, compact('id'))->toArray();
+    }
+
     /**
      * Narrowed down by $conditions.
      * Returned Model's values is selected by $target_columns.

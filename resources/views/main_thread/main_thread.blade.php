@@ -106,6 +106,9 @@
                 </main>
             </div>
         </div>
+
+        {{-- chatパラメータ --}}
+        @include('main_thread/chat_option')
     </div>
 
     <script>
@@ -121,23 +124,28 @@
                 let  chat_of_user_div_clone = null;
                 let chat_of_chat_gpt_div_clone = null;
                 @foreach ($chat_infos as $chat_info)
-                    @if ($chat_info['role'] === 'user')
-                        // chat_of_userを表示する.
-                        chat_of_user_div_clone = chat_of_user_div.cloneNode(true);
-                        chat_of_user_div_clone.querySelector('.js_text-of-user').textContent
-                         = @json($chat_info['content']);
-                        chat_of_user_div_clone.dataset.chatHistoryId = {{$chat_info['id']}};
-                        document.querySelector('#threadArea').appendChild(chat_of_user_div_clone);
+                    @switch($chat_info['role'])
+                        @case('system')
+                            document.querySelector('#system-prompt-area').hidden = true;
+                        @case('user')
+                            // chat_of_userを表示する.
+                            chat_of_user_div_clone = chat_of_user_div.cloneNode(true);
+                            chat_of_user_div_clone.querySelector('.js_text-of-user').textContent
+                            = @json($chat_info['content']);
+                            chat_of_user_div_clone.dataset.chatHistoryId = {{$chat_info['id']}};
+                            document.querySelector('#threadArea').appendChild(chat_of_user_div_clone);
+                            @break
 
-                    @else
-                        // chat_of_chat_gptを表示する.
-                        chat_of_chat_gpt_div_clone = chat_of_chat_gpt_div.cloneNode(true);
-                        chat_of_chat_gpt_div_clone.querySelector('.js_text-of-chat-gpt').textContent
-                        = @json($chat_info['content']);
-                        chat_of_chat_gpt_div_clone.dataset.chatHistoryId = {{$chat_info['id']}};
-                        document.querySelector('#threadArea').appendChild(chat_of_chat_gpt_div_clone);
-
-                    @endif
+                        @case('assistant')
+                            // chat_of_chat_gptを表示する.
+                            chat_of_chat_gpt_div_clone = chat_of_chat_gpt_div.cloneNode(true);
+                            chat_of_chat_gpt_div_clone.querySelector('.js_text-of-chat-gpt').textContent
+                            = @json($chat_info['content']);
+                            chat_of_chat_gpt_div_clone.dataset.chatHistoryId = {{$chat_info['id']}};
+                            document.querySelector('#threadArea').appendChild(chat_of_chat_gpt_div_clone);
+                            @break
+                        @default
+                    @endswitch
                 @endforeach
             @endisset
         });
@@ -165,7 +173,8 @@
             const user_prompt = document.querySelector('#prompt-textarea').value;
             document.querySelector('#prompt-textarea').value = '';
             const parent_chat_history_id = getParentHistoryId('assistant');
-            const chat_history_id = await saveUserPrompt('user', user_prompt, parent_chat_history_id);
+            const options = getOptions();
+            const chat_history_id = await saveUserPrompt('user', user_prompt, parent_chat_history_id, options);
             document.querySelector('#prompt-textarea').style.height = '24px';
 
             // chat_of_userを表示する.
@@ -182,14 +191,14 @@
         /**
          * ユーザーのpromptを保存する.
         */
-        const saveUserPrompt = async (role, user_prompt, parent_chat_history_id) => {
+        const saveUserPrompt = async (role, user_prompt, parent_chat_history_id, options=null) => {
             return await fetch("{{ route('save_user_prompt') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-Token': document.querySelector('#csrf-token').content,
                     },
-                    body: JSON.stringify({role: role, prompt: user_prompt, chat_ulid: chat_ulid, parent_chat_history_id: parent_chat_history_id}),
+                    body: JSON.stringify({role: role, prompt: user_prompt, chat_ulid: chat_ulid, parent_chat_history_id: parent_chat_history_id, options: options}),
                 })
                 .then((response) => response.json()) // レスポンスオブジェクトをJSONに変換
                 .then((data) => {
@@ -211,9 +220,11 @@
                     },
                     body: JSON.stringify({chat_ulid: chat_ulid}),
                 })
-                .then((response) => response.json()) // レスポンスオブジェクトをJSONに変換
+                .then((response) => {
+                    response.json()
+                }) // レスポンスオブジェクトをJSONに変換
                 .then((data) => {
-
+                    location.href = "..";
                 })
                 .catch((error) => {
                     console.log('Error:', error);
@@ -292,6 +303,26 @@
             })
         }
 
-    </script>
+        /**chat_Option.blade.php
+         * OptionのrangeSliderの値変更時に発火
+         * 現在値を更新する
+         */
+        const updateOutput = (rangeInput) => {
+            const output = document.getElementById(rangeInput.getAttribute('data-name') + "Output");
+            output.value = rangeInput.value;
+        }
 
+        const getOptions = () => {
+            const option_elems = document.querySelectorAll('#chatOptions input');
+            console.log(option_elems);
+            let returned_array = {};
+            option_elems.forEach((option_elem) => {
+                console.log('option_elem', option_elem);
+                let option_name = option_elem.dataset.name;
+                returned_array[option_name] =option_elem.value;
+            })
+            console.log('returned_array', returned_array)
+            return returned_array
+        }
+    </script>
 </body>

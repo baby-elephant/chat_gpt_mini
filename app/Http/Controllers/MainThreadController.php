@@ -35,13 +35,13 @@ class MainThreadController extends Controller
 
         // $chat_ulidに紐づくchat_historiesを取得.user_idもチェックする
         $chat_infos = ($chat_ulid === 'new') ? null : $this->mainThreadService->getChatInfos(Auth::guard('web')->user()->id, $chat_ulid);
-        Log::info('$chat_infos');
-        Log::info(print_r($chat_infos, true));
+        // Log::info('$chat_infos');
+        // Log::info(print_r($chat_infos, true));
 
         $chat_history_infos = $this->mainThreadService->getAllChatsForChatHistory(Auth::guard('web')->user()->id);
         // Log::info(print_r($chat_infos, true));
-        Log::info('$chat_history_infos');
-        Log::info(print_r($chat_history_infos, true));
+        // Log::info('$chat_history_infos');
+        // Log::info(print_r($chat_history_infos, true));
 
         // 一連のmessagesを取得
         return view('main_thread/main_thread', compact('chat_ulid', 'chat_infos', 'chat_history_infos'));
@@ -54,11 +54,18 @@ class MainThreadController extends Controller
      * @return void
      */
     public function saveUserPromtRequest(Request $request) {
-        Log::info(print_r($request->all(), true));
+        // Log::info(print_r($request->all(), true));
         // 今後userとchta_ulidの紐づき確認処理を追加する.
 
         // 諸々の保存処理
-        $result_array = $this->mainThreadService->saveUserPrompt(Auth::guard('web')->user()->id, $request->chat_ulid, $request->role, $request->prompt, $request->parent_chat_history_id);
+        $result_array = $this->mainThreadService->saveUserPrompt(
+            Auth::guard('web')->user()->id,
+            $request->chat_ulid,
+            $request->role,
+            $request->prompt,
+            $request->parent_chat_history_id,
+            $request->options
+        );
 
         return response()->json($result_array, $result_array['status']);
     }
@@ -122,11 +129,17 @@ class MainThreadController extends Controller
         $messages = $this->mainThreadService->getChatMessagesForApi(Auth::guard('web')->user()->id, $parent_chat_history_id);
         Log::info(print_r($messages, true));
 
+        $client_parameters = [
+            'model' => 'gpt-4-0314',
+            'messages' => isset($messages) ? $messages : []
+        ];
+
+        //optionを取得する
+        $options = $this->mainThreadService->getChatOptions($parent_chat_history_id);
+
         $client = $this->getClient();
-        $stream = $client->chat()->createStreamed([
-            'model' => 'gpt-4',
-            'messages' => isset($messages) ? $messages : [],
-        ]);
+        $stream = $client->chat()->createStreamed(array_merge($client_parameters, $options));
+        Log::info(print_r(array_merge($client_parameters, $options),true));
 
         return response()->stream(function() use($stream, $parent_chat_history_id) {
             try{

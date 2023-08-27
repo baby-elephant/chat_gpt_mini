@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\MainThreadController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
@@ -16,7 +15,7 @@ use App\Http\Controllers\AuthController;
 |
 */
 
-Route::get('/', function () {return view('welcome');});
+// Route::get('/', function () {return view('welcome');});
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -30,4 +29,8 @@ Route::group(['middleware' => ['auth']], function() {
         Route::post('/delete', [MainThreadController::class, 'deleteChat'])->name('delete_chat');
     });
     Route::get('/chat_gpt_stream_request/{parent_chat_history_id?}', [MainThreadController::class, 'chatGPTStreamRequest'])->name('chat_gpt_stream_request');
+});
+
+Route::fallback(function(){ //存在しないURLは自動的にに新規スレッドにリダイレクトさせる。
+    return redirect(route('view_main_thread_new'));
 });

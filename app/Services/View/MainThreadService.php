@@ -66,6 +66,13 @@ class MainThreadService
         return $messaageArrays;
     }
 
+    public function getChatOptions(int $parent_chat_history_id) {
+        // $parent_chat_history_idに紐づくレコード取得：設定されているオプションの連想配列を作成
+        $options = $this->chatHistoriesService->getTargetColumnsById($parent_chat_history_id, ['temperature', 'n', 'max_tokens', 'presence_penalty', 'frequency_penalty']);
+        // 後で、取得するオプションの中から、nullのやつを取り除く処理を入れる予定20230827
+        return $options;
+    }
+
     /**
      * ユーザーのpromptを基に各種テーブルに情報を保存する.
      * 対象テーブル: chats, chat_messages, chat_histories
@@ -78,7 +85,7 @@ class MainThreadService
      * @param integer|null $parent_chat_history_id
      * @return array
      */
-    public function saveUserPrompt(int $user_id, string $chat_ulid, string $role, string $prompt, ?int $parent_chat_history_id): array {
+    public function saveUserPrompt(int $user_id, string $chat_ulid, string $role, string $prompt, ?int $parent_chat_history_id, ?array $options): array {
 
         try {
             if($chat_ulid === 'new')
@@ -92,7 +99,7 @@ class MainThreadService
             $chat_message_id = $this->chatMessagesService->insertAndGetPrimaryKey($messageArray);
 
             // 今後functionや諸々のoptionを実装予定.
-            $chat_history_id = $this->chatHistoriesService->insertAndGetPrimaryKey($chat_ulid, $chat_message_id, null, $parent_chat_history_id, null, null);
+            $chat_history_id = $this->chatHistoriesService->insertAndGetPrimaryKey($chat_ulid, $chat_message_id, null, $parent_chat_history_id, null, $options);
 
             // 今insertしたchat_historesのpathカラムに値を追加.
             $this->chatHistoriesService->updatePathColumn($chat_history_id, $parent_chat_history_id);
