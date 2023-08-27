@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>HTML Sample</title>
     <link rel="stylesheet" href="{{ asset('css/main_thread.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/chat_option.css') }}">
     <script src="{{ asset('js/main_thread.js') }}"></script>
     <meta id="csrf-token" content="{{ csrf_token() }}">
 </head>

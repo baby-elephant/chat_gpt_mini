@@ -70,6 +70,11 @@ class MainThreadService
         // $parent_chat_history_idに紐づくレコード取得：設定されているオプションの連想配列を作成
         $options = $this->chatHistoriesService->getTargetColumnsById($parent_chat_history_id, ['temperature', 'n', 'max_tokens', 'presence_penalty', 'frequency_penalty']);
         // 後で、取得するオプションの中から、nullのやつを取り除く処理を入れる予定20230827
+        foreach($options as $key => $value) {
+            if($key === 'max_tokens' && $value == 8000) {
+                unset($options[$key]);
+            }
+        }
         return $options;
     }
 
